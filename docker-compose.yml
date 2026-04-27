@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8888:80"  # <-- Usaremos el 8888
+    volumes:
+      - ./src:/var/www/html
+    depends_on:
+      - db
+
+  db:
+    image: mariadb:latest
+    container_name: db_evaluacion
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      - MARIADB_ROOT_PASSWORD=Admin123!
+      - MARIADB_DATABASE=EvaluacionDocentesDB
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:

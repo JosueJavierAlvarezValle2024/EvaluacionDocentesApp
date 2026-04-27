@@ -1,0 +1,7 @@
+# Ignorar archivos del sistema de Windows/Mac
+.DS_Store
+Thumbs.db
+
+# Ignorar la carpeta de base de datos local si Docker la llega a generar ahí
+/mysql
+/mariadb_data
