@@ -2,28 +2,56 @@
 session_start();
 require 'conexion.php'; 
 
+$matricula = $_POST['password'] ?? ''; // Ojo: asegúrate de que el name del input de contraseña siga siendo password
+// Corrección de las variables recibidas del POST
 $matricula = $_POST['matricula'] ?? '';
 $password = $_POST['password'] ?? '';
 
-// 1. Buscamos al alumno en la base de datos
+// 1. Buscamos al usuario en la base de datos
 $stmt = $conn->prepare("SELECT * FROM Alumnos WHERE Matricula = :matricula");
 $stmt->execute(['matricula' => $matricula]);
 $alumno = $stmt->fetch(PDO::FETCH_ASSOC);
 
-// 2. Verificamos si existe el alumno y si la contraseña (Hash) coincide
+// 2. Verificamos si existe y si la contraseña (Hash) coincide
 if ($alumno && password_verify($password, $alumno['ContrasenaHash'])) {
-    // Si todo es correcto, creamos las variables de sesión
+    
+    // Creamos las variables de sesión básicas
     $_SESSION['matricula'] = $alumno['Matricula'];
     $_SESSION['carrera_id'] = $alumno['CarreraID'];
     
-    // 👇 SOLUCIÓN: GUARDAMOS EL NOMBRE EN LA MOCHILA DE SESIÓN 👇
-    $_SESSION['nombre'] = $alumno['NombreCompleto'] ?? $alumno['Nombre']; 
+    // Asignamos el nombre correcto (Identidad Dual)
+    if ($alumno['Matricula'] === '123456') {
+        $_SESSION['nombre'] = "Dirección Académica";
+        
+        // =========================================================
+        // 🔒 MÓDULO DE AUDITORÍA: REGISTRO DE ACCESO DEL ADMIN
+        // =========================================================
+        try {
+            $ip = $_SERVER['REMOTE_ADDR']; 
+            $user_agent = $_SERVER['HTTP_USER_AGENT']; 
+            
+            $stmt_log = $conn->prepare("INSERT INTO AuditoriaAdmin (Matricula, IP_Acceso, Navegador) VALUES (:m, :ip, :ua)");
+            $stmt_log->execute([
+                'm'  => $alumno['Matricula'],
+                'ip' => $ip,
+                'ua' => $user_agent
+            ]);
+        } catch (PDOException $e) {
+            // Si la tabla no existe o falla, el sistema lo ignora silenciosamente 
+            // para no dejar al director fuera de su panel.
+            error_log("Error al registrar auditoría: " . $e->getMessage());
+        }
+        // =========================================================
+
+    } else {
+        $_SESSION['nombre'] = $alumno['NombreCompleto'] ?? $alumno['Nombre'];
+    }
     
-    // REDIRECCIÓN NATIVA DE PHP (Instantánea y sin fallos)
+    // REDIRECCIÓN NATIVA E INSTANTÁNEA
     header("Location: dashboard.php");
     exit;
 }
-// Si el código llega hasta aquí abajo, significa que el login falló.
+// Si el código llega hasta aquí, significa que el login falló.
 ?>
 
 <!DOCTYPE html>
