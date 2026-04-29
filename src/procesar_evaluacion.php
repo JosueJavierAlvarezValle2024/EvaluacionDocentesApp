@@ -12,6 +12,7 @@ if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_tok
 }
 
 
+
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_SESSION['matricula'])) {
     $matricula = $_SESSION['matricula'];
     $docente_id = $_POST['docente_id'];
