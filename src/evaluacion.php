@@ -110,7 +110,7 @@ if (!$docente) {
                 <p class="text-muted">Docente: <span class="text-primary fw-bold"><?php echo $docente['NombreCompleto']; ?></span></p>
             </div>
 
-            <form id="formEvaluacion" action="procesar_evaluacion.php" method="POST">
+            <form id="formEvaluacion" action="procesar_evaluacion.php" method="POST" novalidate>
                 <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                 <input type="hidden" name="docente_id" value="<?php echo $docente_id; ?>">
 
