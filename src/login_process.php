@@ -2,10 +2,10 @@
 session_start();
 require 'conexion.php'; 
 
-$matricula = $_POST['password'] ?? ''; // Ojo: asegúrate de que el name del input de contraseña siga siendo password
 // Corrección de las variables recibidas del POST
 $matricula = $_POST['matricula'] ?? '';
 $password = $_POST['password'] ?? '';
+
 
 // 1. Buscamos al usuario en la base de datos
 $stmt = $conn->prepare("SELECT * FROM Alumnos WHERE Matricula = :matricula");

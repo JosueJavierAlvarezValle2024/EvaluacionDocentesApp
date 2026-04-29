@@ -8,6 +8,8 @@ if (!isset($_SESSION['matricula'])) {
     exit;
 }
 
+
+
 $matricula = $_SESSION['matricula'];
 $nombre_usuario = $_SESSION['nombre'];
 $matricula_admin = '123456'; // Tu matrícula de Administrador
@@ -17,7 +19,34 @@ $es_admin = ($matricula === $matricula_admin);
 $docentes = [];
 $carrera_nombre = "Departamento de Evaluación";
 
-if (!$es_admin) {
+// --- LÓGICA DE DISTRIBUCIÓN DE DATOS ---
+
+if ($es_admin) {
+    // =========================================================
+    // CONSULTAS EXCLUSIVAS PARA EL ADMINISTRADOR
+    // =========================================================
+    // A. Conteo de Docentes
+    $count_docs = $conn->query("SELECT COUNT(*) FROM Docentes")->fetchColumn();
+    
+    // B. Conteo de Evaluaciones
+    $count_evals = $conn->query("SELECT COUNT(*) FROM Evaluaciones")->fetchColumn();
+    
+    // C. Datos para la Gráfica: Promedio por Carrera (excluyendo la carrera 99 del Admin)
+    $sql_grafica = "
+        SELECT c.NombreCarrera, 
+               IFNULL(ROUND(AVG((e.P1_Claridad + e.P2_Aplicacion + e.P3_Dinamica + e.P4_Compromiso + e.P5_Respeto + 
+                                 e.P6_Disposicion + e.P7_Participacion + e.P8_Programa + e.P9_Calificaciones + e.P10_Recomendacion)/10), 2), 0) as promedio 
+        FROM Carreras c 
+        LEFT JOIN Docentes d ON c.CarreraID = d.CarreraID 
+        LEFT JOIN Evaluaciones e ON d.DocenteID = e.DocenteID 
+        WHERE c.CarreraID != 99 
+        GROUP BY c.NombreCarrera";
+    $datos_grafica = $conn->query($sql_grafica)->fetchAll(PDO::FETCH_ASSOC);
+
+} else {
+    // =========================================================
+    // CONSULTAS EXCLUSIVAS PARA EL ALUMNO (Tu código original)
+    // =========================================================
     // 1. Obtener el nombre de la carrera del alumno
     $stmt_carrera = $conn->prepare("SELECT c.NombreCarrera FROM Alumnos a JOIN Carreras c ON a.CarreraID = c.CarreraID WHERE a.Matricula = :m");
     $stmt_carrera->execute(['m' => $matricula]);
@@ -38,6 +67,7 @@ if (!$es_admin) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SEVAL | Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { background-color: #E2E8F0; min-height: 100vh; }
         .navbar-tecnm { background-color: #1B396A; }
@@ -68,83 +98,100 @@ if (!$es_admin) {
 </head>
 <body>
 
-<nav class="navbar navbar-dark navbar-tecnm shadow mb-4">
+<nav class="navbar navbar-dark shadow mb-4" style="background-color: #1B396A;">
     <div class="container">
-        <a class="navbar-brand d-flex align-items-center" href="#">
-            <img src="logo_tecnm.png" alt="Logo" height="30" class="me-2" style="filter: brightness(0) invert(1);">
-            SEVAL - TecNM
-        </a>
-        <div class="d-flex align-items-center text-white">
-            <span class="me-3 d-none d-md-inline">Sesión: <strong><?php echo $nombre_usuario; ?></strong></span>
-            <a href="logout.php" class="btn btn-outline-light btn-sm">Cerrar Sesión</a>
+        <a class="navbar-brand fw-bold" href="#">📊 SEVAL TecNM</a>
+        <div class="text-white small">
+            Usuario: <strong><?php echo $_SESSION['nombre']; ?></strong> | 
+            <a href="logout.php" class="text-white ms-2 text-decoration-none">Cerrar Sesión</a>
         </div>
     </div>
 </nav>
 
 <div class="container pb-5">
     
-    <div class="row align-items-center mb-4">
-        <div class="col-md-8">
-            <h2 class="fw-bold" style="color: #1B396A;">
-                <?php echo $es_admin ? "Panel de Control Administrativo" : "Mis Evaluaciones Pendientes"; ?>
-            </h2>
-            <p class="text-muted">
-                <?php echo $es_admin ? "Área de Gestión Académica" : "Carrera: <strong>$carrera_nombre</strong>"; ?>
-            </p>
-        </div>
-        
-        <?php if ($es_admin): ?>
-        <div class="col-md-4 text-md-end">
-            <a href="admin_resultados.php" class="btn btn-warning btn-lg shadow fw-bold">
-                📊 Ver Reportes Directivos
-            </a>
-        </div>
-        <?php endif; ?>
-    </div>
-
-    <hr class="mb-5">
+    <h2 class="fw-bold mb-4" style="color: #1B396A;">
+        <?php echo $es_admin ? "Panel de Inteligencia Académica" : "Mis Evaluaciones Pendientes"; ?>
+    </h2>
 
     <?php if ($es_admin): ?>
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="admin-box p-5 shadow-sm text-center">
-                    <div class="display-1 mb-4">⚙️</div>
-                    <h3 class="fw-bold text-dark">Modo Administrador Activo</h3>
-                    <p class="text-secondary fs-5">
-                        Usted ha ingresado con privilegios de supervisión. En este apartado no se muestran listas de evaluación estudiantil. 
-                        Por favor, utilice el botón superior para acceder al análisis de resultados generales.
-                    </p>
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-4 text-center" style="border-radius: 15px;">
+                    <div class="display-6 mb-2">👤</div>
+                    <h3 class="fw-bold"><?php echo $count_docs; ?></h3>
+                    <p class="text-muted mb-0">Docentes Registrados</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-4 text-center" style="border-radius: 15px;">
+                    <div class="display-6 mb-2">📑</div>
+                    <h3 class="fw-bold"><?php echo $count_evals; ?></h3>
+                    <p class="text-muted mb-0">Evaluaciones Totales</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-4 text-center" style="border-radius: 15px;">
+                    <div class="display-6 mb-2">🏁</div>
+                    <a href="admin_resultados.php" class="btn btn-warning fw-bold w-100 mt-2 shadow-sm">Ver Reportes y Exportar</a>
+                    <p class="text-muted mt-2 small">Análisis detallado</p>
                 </div>
             </div>
         </div>
 
+        <div class="row">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm p-4 bg-white" style="border-radius: 20px;">
+                    <h5 class="fw-bold mb-4">📈 Promedio de Satisfacción por Carrera (Escala 1-5)</h5>
+                    <canvas id="graficaCarreras" style="max-height: 350px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const ctx = document.getElementById('graficaCarreras').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: <?php echo json_encode(array_column($datos_grafica, 'NombreCarrera')); ?>,
+                    datasets: [{
+                        label: 'Calificación Promedio',
+                        data: <?php echo json_encode(array_column($datos_grafica, 'promedio')); ?>,
+                        backgroundColor: '#1B396A',
+                        borderColor: '#3b82f6',
+                        borderWidth: 1,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: { 
+                        y: { 
+                            beginAtZero: true, 
+                            max: 5,
+                            ticks: { stepSize: 1 }
+                        } 
+                    }
+                }
+            });
+        </script>
+
     <?php else: ?>
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-            <?php if (count($docentes) > 0): ?>
-                <?php foreach ($docentes as $doc): ?>
+        <p class="text-muted mb-4">Carrera: <strong><?php echo $carrera_nombre; ?></strong></p>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            <?php foreach ($docentes as $doc): ?>
                 <div class="col">
-                    <div class="card card-custom h-100 shadow">
-                        <div class="card-body text-center p-4">
-                            <div class="mb-3">
-                                <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($doc['NombreCompleto']); ?>&background=1B396A&color=fff&size=128" 
-                                     class="rounded-circle shadow-sm" alt="Docente">
-                            </div>
-                            <h5 class="card-title fw-bold"><?php echo htmlspecialchars($doc['NombreCompleto']); ?></h5>
-                            <p class="text-info small mb-4">Docente Titular</p>
-                            
-                            <a href="evaluacion.php?docente_id=<?php echo $doc['DocenteID']; ?>" 
-                               class="btn btn-evaluar w-100 py-2 fw-bold">
-                                Iniciar Evaluación
-                            </a>
-                        </div>
+                    <div class="card h-100 shadow-sm text-center p-4 border-0" style="background-color: #0F172A; color: white; border-radius: 15px;">
+                        <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($doc['NombreCompleto']); ?>&background=1B396A&color=fff" class="rounded-circle mx-auto mb-3" width="80">
+                        <h5 class="fw-bold"><?php echo htmlspecialchars($doc['NombreCompleto']); ?></h5>
+                        <p class="small text-info">Docente de Carrera</p>
+                        <a href="evaluacion.php?docente_id=<?php echo $doc['DocenteID']; ?>" class="btn btn-primary btn-sm w-100 mt-auto">Evaluar Docente</a>
                     </div>
                 </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <div class="col-12 text-center py-5">
-                    <h4 class="text-muted">No tienes docentes asignados para evaluar en este momento.</h4>
-                </div>
-            <?php endif; ?>
+            <?php endforeach; ?>
         </div>
     <?php endif; ?>
 
