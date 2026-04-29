@@ -161,6 +161,23 @@ document.getElementById('formEvaluacion').addEventListener('submit', function(e)
     // 1. Evitamos que la página haga la recarga tradicional
     e.preventDefault(); 
 
+    // ==========================================
+    // 🛡️ VALIDACIÓN DE PREGUNTAS COMPLETAS
+    // ==========================================
+    const totalRespondidas = document.querySelectorAll('input[type="radio"]:checked').length;
+    
+    if (totalRespondidas < 10) {
+        Swal.fire({
+            icon: 'warning',
+            title: '¡Evaluación Incompleta!',
+            text: 'Por favor, asegúrate de calificar las 10 preguntas antes de enviar.',
+            confirmButtonColor: '#1B396A',
+            confirmButtonText: 'Revisar'
+        });
+        return; // Esto detiene la ejecución y evita que se envíe en blanco
+    }
+    // ==========================================
+
     // 2. Recolectamos todas las respuestas (las estrellas)
     const formData = new FormData(this);
 
