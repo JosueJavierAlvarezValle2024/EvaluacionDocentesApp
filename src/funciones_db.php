@@ -50,4 +50,31 @@ function obtenerDocentesParaEvaluar($conn, $carrera_id, $matricula) {
     ]);
     return $stmt->fetchAll();
 }
+
+// Obtener el desglose de promedios por pregunta y los comentarios de un docente
+function obtenerDetallesDocente($conn, $docente_id) {
+    // 1. Promedios por cada una de las 10 preguntas
+    $sql_promedios = "
+        SELECT 
+            AVG(P1_Claridad) as p1, AVG(P2_Aplicacion) as p2, AVG(P3_Dinamica) as p3, 
+            AVG(P4_Compromiso) as p4, AVG(P5_Respeto) as p5, AVG(P6_Disposicion) as p6, 
+            AVG(P7_Participacion) as p7, AVG(P8_Programa) as p8, AVG(P9_Calificaciones) as p9, 
+            AVG(P10_Recomendacion) as p10 
+        FROM Evaluaciones 
+        WHERE DocenteID = :id";
+    
+    $stmt_p = $conn->prepare($sql_promedios);
+    $stmt_p->execute(['id' => $docente_id]);
+    $promedios = $stmt_p->fetch(PDO::FETCH_ASSOC);
+
+    // 2. Comentarios de texto (omitimos los vacíos)
+    $stmt_c = $conn->prepare("SELECT Comentarios FROM Evaluaciones WHERE DocenteID = :id AND Comentarios != ''");
+    $stmt_c->execute(['id' => $docente_id]);
+    $comentarios = $stmt_c->fetchAll(PDO::FETCH_COLUMN);
+
+    return [
+        'promedios' => $promedios,
+        'comentarios' => $comentarios
+    ];
+}
 ?>

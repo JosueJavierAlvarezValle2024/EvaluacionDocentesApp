@@ -1,6 +1,7 @@
 <?php
 session_start();
 require 'conexion.php';
+require 'funciones_db.php'; // 🚀 Conectamos nuestro Modelo MVC
 
 // 1. Candado de Seguridad
 $matricula_admin = '123456';
@@ -146,6 +147,60 @@ $logs = $stmt_audit->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </div>
 </div>
+
+<?php foreach ($resultados as $fila): ?>
+    <?php 
+        // Pedimos los datos detallados al Modelo
+        $detalles = obtenerDetallesDocente($conn, $fila['DocenteID']); 
+        $proms = $detalles['promedios'];
+        $comentarios = $detalles['comentarios'];
+    ?>
+    <div class="modal fade" id="modal_<?php echo $fila['DocenteID']; ?>" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header text-white" style="background-color: #1B396A;">
+                    <h5 class="modal-title fw-bold">📊 Análisis Detallado: <?php echo htmlspecialchars($fila['Docente']); ?></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body bg-light">
+                    <?php if ($fila['TotalEvaluaciones'] > 0): ?>
+                        
+                        <h6 class="fw-bold text-secondary border-bottom pb-2 mb-3">Promedios por Criterio (Escala 1-5)</h6>
+                        <div class="row g-2 mb-4 small">
+                            <div class="col-md-6"><div class="p-2 bg-white border rounded"><strong>1. Claridad:</strong> ⭐ <?php echo round($proms['p1'], 2); ?></div></div>
+                            <div class="col-md-6"><div class="p-2 bg-white border rounded"><strong>2. Aplicación:</strong> ⭐ <?php echo round($proms['p2'], 2); ?></div></div>
+                            <div class="col-md-6"><div class="p-2 bg-white border rounded"><strong>3. Dinámica:</strong> ⭐ <?php echo round($proms['p3'], 2); ?></div></div>
+                            <div class="col-md-6"><div class="p-2 bg-white border rounded"><strong>4. Compromiso:</strong> ⭐ <?php echo round($proms['p4'], 2); ?></div></div>
+                            <div class="col-md-6"><div class="p-2 bg-white border rounded"><strong>5. Respeto:</strong> ⭐ <?php echo round($proms['p5'], 2); ?></div></div>
+                            <div class="col-md-6"><div class="p-2 bg-white border rounded"><strong>6. Disposición:</strong> ⭐ <?php echo round($proms['p6'], 2); ?></div></div>
+                            <div class="col-md-6"><div class="p-2 bg-white border rounded"><strong>7. Participación:</strong> ⭐ <?php echo round($proms['p7'], 2); ?></div></div>
+                            <div class="col-md-6"><div class="p-2 bg-white border rounded"><strong>8. Programa:</strong> ⭐ <?php echo round($proms['p8'], 2); ?></div></div>
+                            <div class="col-md-6"><div class="p-2 bg-white border rounded"><strong>9. Calificaciones:</strong> ⭐ <?php echo round($proms['p9'], 2); ?></div></div>
+                            <div class="col-md-6"><div class="p-2 bg-white border rounded"><strong>10. Recomendación:</strong> ⭐ <?php echo round($proms['p10'], 2); ?></div></div>
+                        </div>
+                        
+                        <h6 class="fw-bold text-secondary border-bottom pb-2 mb-3">💬 Comentarios de Alumnos</h6>
+                        <?php if (count($comentarios) > 0): ?>
+                            <ul class="list-group list-group-flush shadow-sm rounded">
+                                <?php foreach ($comentarios as $comentario): ?>
+                                    <li class="list-group-item bg-white fst-italic">"<?php echo htmlspecialchars($comentario); ?>"</li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php else: ?>
+                            <div class="alert alert-secondary text-center small py-2">No se dejaron comentarios escritos.</div>
+                        <?php endif; ?>
+
+                    <?php else: ?>
+                        <div class="alert alert-warning text-center">Este docente aún no cuenta con evaluaciones.</div>
+                    <?php endif; ?>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+<?php endforeach; ?>
 
 <div class="modal fade" id="modalAuditoria" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
