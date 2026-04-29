@@ -2,6 +2,16 @@
 session_start();
 require 'conexion.php';
 
+// =========================================================
+// 🛡️ VALIDACIÓN DE SEGURIDAD CSRF
+// =========================================================
+if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+    // Si no hay token o no coincide, bloqueamos el proceso
+    echo json_encode(['status' => 'error', 'message' => 'Bloqueo de Seguridad: Petición no autorizada (CSRF Token inválido).']);
+    exit;
+}
+
+
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_SESSION['matricula'])) {
     $matricula = $_SESSION['matricula'];
     $docente_id = $_POST['docente_id'];

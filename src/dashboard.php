@@ -9,7 +9,6 @@ if (!isset($_SESSION['matricula'])) {
 }
 
 
-
 $matricula = $_SESSION['matricula'];
 $nombre_usuario = $_SESSION['nombre'];
 $matricula_admin = '123456'; // Tu matrícula de Administrador
@@ -53,9 +52,18 @@ if ($es_admin) {
     $res_carrera = $stmt_carrera->fetch();
     $carrera_nombre = $res_carrera['NombreCarrera'] ?? 'Carrera no asignada';
 
-    // 2. Obtener los docentes de esa carrera
-    $stmt_docentes = $conn->prepare("SELECT * FROM Docentes WHERE CarreraID = :cid");
-    $stmt_docentes->execute(['cid' => $_SESSION['carrera_id']]);
+    // 2. Obtener los docentes y verificar si ya fueron evaluados por este alumno
+    $stmt_docentes = $conn->prepare("
+        SELECT d.*, 
+               (SELECT COUNT(*) FROM Evaluaciones e 
+                WHERE e.DocenteID = d.DocenteID AND e.Matricula = :m_eval) as YaEvaluado
+        FROM Docentes d 
+        WHERE d.CarreraID = :cid
+    ");
+    $stmt_docentes->execute([
+        'cid' => $_SESSION['carrera_id'],
+        'm_eval' => $matricula
+    ]);
     $docentes = $stmt_docentes->fetchAll();
 }
 ?>
@@ -188,7 +196,15 @@ if ($es_admin) {
                         <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($doc['NombreCompleto']); ?>&background=1B396A&color=fff" class="rounded-circle mx-auto mb-3" width="80">
                         <h5 class="fw-bold"><?php echo htmlspecialchars($doc['NombreCompleto']); ?></h5>
                         <p class="small text-info">Docente de Carrera</p>
-                        <a href="evaluacion.php?docente_id=<?php echo $doc['DocenteID']; ?>" class="btn btn-primary btn-sm w-100 mt-auto">Evaluar Docente</a>
+                        <?php if ($doc['YaEvaluado'] > 0): ?>
+    <button class="btn btn-success btn-sm w-100 mt-auto" disabled style="background-color: #198754; border: none;">
+        ✅ Evaluado
+    </button>
+<?php else: ?>
+    <a href="evaluacion.php?docente_id=<?php echo $doc['DocenteID']; ?>" class="btn btn-primary btn-sm w-100 mt-auto" style="background-color: #1B396A; border: none;">
+        Evaluar Docente
+    </a>
+<?php endif; ?>
                     </div>
                 </div>
             <?php endforeach; ?>

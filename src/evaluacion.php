@@ -2,6 +2,11 @@
 session_start();
 require 'conexion.php';
 
+// Generar Token CSRF si no existe en la sesión
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 if (!isset($_SESSION['matricula']) || !isset($_GET['docente_id'])) {
     header("Location: dashboard.php");
     exit;
@@ -106,6 +111,7 @@ if (!$docente) {
             </div>
 
             <form id="formEvaluacion" action="procesar_evaluacion.php" method="POST">
+                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                 <input type="hidden" name="docente_id" value="<?php echo $docente_id; ?>">
 
                 <?php
