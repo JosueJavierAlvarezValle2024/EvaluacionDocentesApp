@@ -1,6 +1,7 @@
 <?php
 session_start();
 require 'conexion.php';
+require 'funciones_db.php'; // 🚀 Aquí conectamos nuestro nuevo Modelo MVC
 
 // Verificamos que haya una sesión activa
 if (!isset($_SESSION['matricula'])) {
@@ -8,63 +9,25 @@ if (!isset($_SESSION['matricula'])) {
     exit;
 }
 
-
 $matricula = $_SESSION['matricula'];
 $nombre_usuario = $_SESSION['nombre'];
-$matricula_admin = '123456'; // Tu matrícula de Administrador
+$matricula_admin = '123456'; 
 $es_admin = ($matricula === $matricula_admin);
 
-// Si no es admin, obtenemos su carrera y sus docentes asignados
 $docentes = [];
 $carrera_nombre = "Departamento de Evaluación";
 
-// --- LÓGICA DE DISTRIBUCIÓN DE DATOS ---
+// --- CONTROLADOR LIGERO ---
 
 if ($es_admin) {
-    // =========================================================
-    // CONSULTAS EXCLUSIVAS PARA EL ADMINISTRADOR
-    // =========================================================
-    // A. Conteo de Docentes
-    $count_docs = $conn->query("SELECT COUNT(*) FROM Docentes")->fetchColumn();
-    
-    // B. Conteo de Evaluaciones
-    $count_evals = $conn->query("SELECT COUNT(*) FROM Evaluaciones")->fetchColumn();
-    
-    // C. Datos para la Gráfica: Promedio por Carrera (excluyendo la carrera 99 del Admin)
-    $sql_grafica = "
-        SELECT c.NombreCarrera, 
-               IFNULL(ROUND(AVG((e.P1_Claridad + e.P2_Aplicacion + e.P3_Dinamica + e.P4_Compromiso + e.P5_Respeto + 
-                                 e.P6_Disposicion + e.P7_Participacion + e.P8_Programa + e.P9_Calificaciones + e.P10_Recomendacion)/10), 2), 0) as promedio 
-        FROM Carreras c 
-        LEFT JOIN Docentes d ON c.CarreraID = d.CarreraID 
-        LEFT JOIN Evaluaciones e ON d.DocenteID = e.DocenteID 
-        WHERE c.CarreraID != 99 
-        GROUP BY c.NombreCarrera";
-    $datos_grafica = $conn->query($sql_grafica)->fetchAll(PDO::FETCH_ASSOC);
-
+    // El admin pide sus estadísticas
+    $count_docs = contarDocentes($conn);
+    $count_evals = contarEvaluaciones($conn);
+    $datos_grafica = obtenerDatosGrafica($conn);
 } else {
-    // =========================================================
-    // CONSULTAS EXCLUSIVAS PARA EL ALUMNO (Tu código original)
-    // =========================================================
-    // 1. Obtener el nombre de la carrera del alumno
-    $stmt_carrera = $conn->prepare("SELECT c.NombreCarrera FROM Alumnos a JOIN Carreras c ON a.CarreraID = c.CarreraID WHERE a.Matricula = :m");
-    $stmt_carrera->execute(['m' => $matricula]);
-    $res_carrera = $stmt_carrera->fetch();
-    $carrera_nombre = $res_carrera['NombreCarrera'] ?? 'Carrera no asignada';
-
-    // 2. Obtener los docentes y verificar si ya fueron evaluados por este alumno
-    $stmt_docentes = $conn->prepare("
-        SELECT d.*, 
-               (SELECT COUNT(*) FROM Evaluaciones e 
-                WHERE e.DocenteID = d.DocenteID AND e.Matricula = :m_eval) as YaEvaluado
-        FROM Docentes d 
-        WHERE d.CarreraID = :cid
-    ");
-    $stmt_docentes->execute([
-        'cid' => $_SESSION['carrera_id'],
-        'm_eval' => $matricula
-    ]);
-    $docentes = $stmt_docentes->fetchAll();
+    // El alumno pide su carrera y sus docentes
+    $carrera_nombre = obtenerNombreCarrera($conn, $matricula);
+    $docentes = obtenerDocentesParaEvaluar($conn, $_SESSION['carrera_id'], $matricula);
 }
 ?>
 
