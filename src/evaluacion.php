@@ -110,6 +110,18 @@ if (!$docente) {
                 <p class="text-muted">Docente: <span class="text-primary fw-bold"><?php echo $docente['NombreCompleto']; ?></span></p>
             </div>
 
+            <div class="card shadow-sm border-0 mb-4 p-3" style="border-radius: 15px;">
+    <div class="d-flex justify-content-between small fw-bold mb-2" style="color: #1B396A;">
+        <span>Progreso de la Evaluación</span>
+        <span id="textoProgreso">0 / 10 Preguntas Respondidas</span>
+    </div>
+    <div class="progress" style="height: 12px; border-radius: 10px;">
+        <div id="barraProgreso" class="progress-bar progress-bar-striped progress-bar-animated" 
+             role="progressbar" style="width: 0%; background-color: #1B396A;" 
+             aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+    </div>
+</div>
+
             <form id="formEvaluacion" action="procesar_evaluacion.php" method="POST" novalidate>
                 <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                 <input type="hidden" name="docente_id" value="<?php echo $docente_id; ?>">
@@ -157,6 +169,37 @@ if (!$docente) {
 </div>
 
 <script>
+
+// ==========================================
+    // 🚀 LÓGICA DE LA BARRA DE PROGRESO
+    // ==========================================
+    const opciones = document.querySelectorAll('input[type="radio"]');
+    const barraProgreso = document.getElementById('barraProgreso');
+    const textoProgreso = document.getElementById('textoProgreso');
+
+    opciones.forEach(opcion => {
+        opcion.addEventListener('change', () => {
+            // Contamos cuántas preguntas ya tienen respuesta
+            const totalRespondidas = document.querySelectorAll('input[type="radio"]:checked').length;
+            
+            // Calculamos el porcentaje (como son 10 preguntas, cada una vale 10%)
+            const porcentaje = (totalRespondidas / 10) * 100;
+            
+            // Animamos la barra y actualizamos el texto
+            barraProgreso.style.width = porcentaje + '%';
+            textoProgreso.innerText = totalRespondidas + ' / 10 Preguntas Respondidas';
+            
+            // Si llega a 10, la pintamos de verde (Éxito)
+            if(totalRespondidas === 10) {
+                barraProgreso.style.backgroundColor = '#198754'; // Verde Bootstrap
+            } else {
+                barraProgreso.style.backgroundColor = '#1B396A'; // Azul TecNM
+            }
+        });
+    });
+    // ==========================================
+
+
 document.getElementById('formEvaluacion').addEventListener('submit', function(e) {
     // 1. Evitamos que la página haga la recarga tradicional
     e.preventDefault(); 
