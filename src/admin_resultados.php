@@ -4,7 +4,7 @@ require 'conexion.php';
 require 'funciones_db.php'; // 🚀 Conectamos nuestro Modelo MVC
 
 // 1. Candado de Seguridad
-$matricula_admin = '123456';
+$matricula_admin = $admin_secret_token;
 if (!isset($_SESSION['matricula']) || $_SESSION['matricula'] !== $matricula_admin) {
     header("Location: dashboard.php");
     exit;
@@ -52,7 +52,7 @@ $logs = $stmt_audit->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <title>TecNM | Reporte Directivo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -299,16 +299,7 @@ function exportarXML() {
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
-<script>
-$(document).ready(function() {
-    $('.table-tecnm').DataTable({
-        "pageLength": 10, // Mostrar de 10 en 10
-        "lengthMenu": [[5, 10, 25, 50, -1], [5, 10, 25, 50, "Todos"]], // Opciones para el admin
-        "language": {
-            "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" // Traducción al español
-        }
-    });
-});
+
 </script>
 
 </body>

@@ -11,7 +11,7 @@ if (!isset($_SESSION['matricula'])) {
 
 $matricula = $_SESSION['matricula'];
 $nombre_usuario = $_SESSION['nombre'];
-$matricula_admin = '123456'; 
+$matricula_admin = $admin_secret_token; // Se carga desde conexion.php 
 $es_admin = ($matricula === $matricula_admin);
 
 $docentes = [];

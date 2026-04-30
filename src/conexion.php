@@ -17,4 +17,7 @@ try {
     // Solo mostramos mensaje si REALMENTE hay un error
     die("Error de conexión: " . $e->getMessage());
 }
+
+// Configuración de Seguridad: Matrícula del Administrador
+$admin_secret_token = '00199'; // <--- Cambia esto por la nueva
 ?>
